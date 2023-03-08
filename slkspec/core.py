@@ -62,7 +62,7 @@ class SLKFile(io.IOBase):
         'r'       open for reading (default)
         'b'       binary mode (default)
         't'       text mode
-    file_permissions: int, default 0o3775
+    file_permissions: int, default 0o2775
         Permission when creating directories and files.
     **kwargs:
         Additional keyword arguments passed to the open file descriptor method.
@@ -95,8 +95,8 @@ class SLKFile(io.IOBase):
         *,
         override: bool = True,
         mode: str = "rb",
-        touch: bool = True,
-        file_permissions: int = 0o3775,
+        touch: bool = False,
+        file_permissions: int = 0o2775,
         delay: int = 2,
         _lock: threading.Lock = _retrieval_lock,
         _file_queue: Queue[Tuple[str, str]] = FileQueue,
@@ -159,8 +159,6 @@ class SLKFile(io.IOBase):
                 raise RuntimeError ("SLK is currently broken. Downloads are deactivated")
             pyslk.slk_retrieve(search_id, str(output_dir))
             logger.debug("Adjusting file permissions")
-            for out_file in map(Path, inp_files):
-                (output_dir / Path(*out_file.parts[1:])).chmod(self.file_permissions)
 
     def mkdirs(self, path):
         rp = os.path.realpath(path)
@@ -293,7 +291,7 @@ class SLKFileSystem(AbstractFileSystem):
         self,
         block_size: Optional[int] = None,
         slk_cache: Optional[Union[str, Path]] = None,
-        file_permissions: int = 0o3775,
+        file_permissions: int = 0o2775,
         touch: bool = True,
         delay: int = 2,
         override: bool = False,
