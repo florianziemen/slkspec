@@ -28,6 +28,8 @@ from typing import (
 from fsspec.spec import AbstractFileSystem
 from pyslk import pyslk
 
+SLK_BROKEN=False
+
 logger = logging.getLogger("slkspec")
 logger.setLevel(logging.INFO)
 
@@ -45,6 +47,8 @@ class SLKFile(io.IOBase):
     ----------
     url: str
         Source path of the file that should be retrieved.
+    slk_cache: str
+        Location of the slk cache
     local_file: str
         Destination path of the downloaded file.
     override: bool, default: False
@@ -86,6 +90,7 @@ class SLKFile(io.IOBase):
     def __init__(
         self,
         url: str,
+        slk_cache: str,
         local_file: str,
         *,
         override: bool = True,
@@ -102,6 +107,7 @@ class SLKFile(io.IOBase):
         if "b" not in mode:
             kwargs.setdefault("encoding", "utf-8")
         self._file = str(Path(local_file).expanduser().absolute())
+        self.slk_cache = Path(slk_cache)
         self._url = str(url)
         self.touch = touch
         self.file_permissions = file_permissions
@@ -138,9 +144,10 @@ class SLKFile(io.IOBase):
         retrieval_requests: Dict[Path, List[str]] = defaultdict(list)
         logger.debug("Retrieving %i items from tape", len(retrieve_files))
         for inp_file, out_dir in retrieve_files:
-            retrieval_requests[Path(out_dir)].append(inp_file)
+            self.mkdirs(out_dir)
+            retrieval_requests[self.slk_cache].append(inp_file)
+            
         for output_dir, inp_files in retrieval_requests.items():
-            self.mkdirs(output_dir)
             logger.debug("Creating slk query for %i files", len(inp_files))
             search_str = pyslk.slk_search(pyslk.slk_gen_file_query(inp_files))
             search_id_re = re.search("Search ID: [0-9]*", search_str)
@@ -148,10 +155,12 @@ class SLKFile(io.IOBase):
                 raise FileNotFoundError("No files found in archive.")
             search_id = int(search_id_re.group(0)[11:])
             logger.debug("Retrieving files for search id: %i", search_id)
+            if SLK_BROKEN:
+                raise RuntimeError ("SLK is currently broken. Downloads are deactivated")
             pyslk.slk_retrieve(search_id, str(output_dir))
             logger.debug("Adjusting file permissions")
             for out_file in map(Path, inp_files):
-                (output_dir / out_file.name).chmod(self.file_permissions)
+                (output_dir / Path(*out_file.parts[1:])).chmod(self.file_permissions)
 
     def mkdirs(self, path):
         rp = os.path.realpath(path)
@@ -379,6 +388,7 @@ class SLKFileSystem(AbstractFileSystem):
         local_path = self.slk_cache.joinpath(*path.parts[1:])
         return SLKFile(
             str(path),
+            str(self.slk_cache),
             str(local_path),
             mode=mode,
             override=self.override,
