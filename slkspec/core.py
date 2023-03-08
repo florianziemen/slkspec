@@ -156,12 +156,17 @@ class SLKFile(io.IOBase):
     def mkdirs(self, path):
         rp = os.path.realpath(path)
         if os.access(rp, os.F_OK):
+            if not os.access(rp, os.W_OK):
+                raise PermissionError(f"Cannot write to directory, {rp}, needed for downloading data. Probably, you lack access privileges.")
             return
         components = Path(rp).parts[1:]
         for i in range (len(components)):
             subpath = Path("/", *components[:i+1])
             if not os.access(subpath, os.F_OK):
-                os.mkdir(subpath)
+                try:
+                    os.mkdir(subpath)
+                except PermissionError as e:
+                    raise PermissionError(f"Cannot create or access directory, {e.filename}, needed for downloading data. Probably, you lack access privileges.")
                 os.chmod(subpath, self.file_permissions)
 
 
