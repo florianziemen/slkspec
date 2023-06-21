@@ -157,7 +157,7 @@ class SLKFile(io.IOBase):
             logger.debug("Retrieving files for search id: %i", search_id)
             if SLK_BROKEN:
                 raise RuntimeError ("SLK is currently broken. Downloads are deactivated")
-            pyslk.slk_retrieve(search_id, str(output_dir))
+            pyslk.slk_retrieve(search_id, str(output_dir), preserve_path=True)
             logger.debug("Adjusting file permissions")
 
     def mkdirs(self, path):
