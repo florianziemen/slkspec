@@ -119,7 +119,7 @@ class SLKFile(io.IOBase):
         self.write_through = False
         self.delay = delay
         self._file_queue = _file_queue
-        print(self._file)
+#        print(self._file)
         with _lock:
             if not Path(self._file).exists() or override:
                 self._file_queue.put((self._url, str(Path(self._file).parent)))
