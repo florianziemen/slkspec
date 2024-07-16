@@ -147,11 +147,11 @@ class SLKFile(io.IOBase):
             self._mkdirs(output_dir)
             retrieval_requests.append(inp_file)
         logger.debug("Creating slk query for %i files", len(retrieve_files))
-        search_id = pyslk.search(pyslk.slk_gen_file_query(retrieval_requests))
+        search_id = pyslk.search(pyslk.gen_file_query(retrieval_requests))
         if search_id is None:
             raise FileNotFoundError("No files found in archive.")
         logger.debug("Retrieving files for search id: %i", search_id)
-        pyslk.slk_retrieve(search_id, str(self.slk_cache), preserve_path=True)
+        pyslk.retrieve(search_id, str(self.slk_cache), preserve_path=True)
         logger.debug("Adjusting file permissions")
         for out_file in retrieval_requests:
             local_path = self.slk_cache / Path(out_file.strip("/"))
@@ -194,7 +194,7 @@ class SLKFile(io.IOBase):
             self._cache_files()
         return self._file_obj.seek(target)  # type: ignore
 
-    def _mkdirs(self, path):
+    def _mkdirs(self, path : Union[str, Path]) -> None:
         rp = os.path.realpath(path)
         if os.access(rp, os.F_OK):
             if not os.access(rp, os.W_OK):
