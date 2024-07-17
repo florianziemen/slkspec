@@ -50,9 +50,9 @@ class SLKFile(io.IOBase):
         retrieve data from tape.
     override: bool, default: False
         Override existing files
-    touch: bool, default: True
+    touch: bool, default: False
         Update existing files on the temporary storage to prevent them
-        from being deleted.
+        from being deleted. // not necessary as they are read.
     mode: str, default: rb
         Specify the mode in which the files are opened
 
@@ -92,8 +92,7 @@ class SLKFile(io.IOBase):
         *,
         override: bool = True,
         mode: str = "rb",
-        touch: bool = True,
-        file_permissions: int = 0o3777,
+        touch: bool = False,
         delay: int = 2,
         _lock: threading.Lock = _retrieval_lock,
         _file_queue: Queue[Tuple[str, str]] = FileQueue,
@@ -252,9 +251,9 @@ class SLKFileSystem(AbstractFileSystem):
         Permission when creating directories and files.
     override: bool, default: False
         Override existing files
-    touch: bool, default: True
+    touch: bool, default: False
         Update existing files on the temporary storage to prevent them
-        from being deleted.
+        from being deleted. // not necessary if they are read.
     **storage_options:
         Additional options passed to the AbstractFileSystem class.
     """
@@ -267,8 +266,7 @@ class SLKFileSystem(AbstractFileSystem):
         self,
         block_size: Optional[int] = None,
         slk_cache: Optional[Union[str, Path]] = None,
-        file_permissions: int = 0o3777,
-        touch: bool = True,
+        touch: bool = False,
         delay: int = 2,
         override: bool = False,
         **storage_options: Any,
