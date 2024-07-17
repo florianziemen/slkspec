@@ -59,9 +59,10 @@ class SLKFile(io.IOBase):
         'r'       open for reading (default)
         'b'       binary mode (default)
         't'       text mode
-    file_permissions: int, default 0o3777
-        Permission when creating directories and files.
-    **kwargs:
+    file_permissions: int, default: 0o644
+        Permission when creating files.
+    dir_permissions: int, default: 0o2775
+        Permission when creating directories.   **kwargs:
         Additional keyword arguments passed to the open file descriptor method.
 
     Example
@@ -93,6 +94,8 @@ class SLKFile(io.IOBase):
         override: bool = True,
         mode: str = "rb",
         touch: bool = False,
+        file_permissions: int = 0o644,
+        dir_permissions: int = 0o2775,
         delay: int = 2,
         _lock: threading.Lock = _retrieval_lock,
         _file_queue: Queue[Tuple[str, str]] = FileQueue,
@@ -107,6 +110,7 @@ class SLKFile(io.IOBase):
         self.slk_cache = Path(slk_cache)
         self.touch = touch
         self.file_permissions = file_permissions
+        self.dir_permissions = dir_permissions
         self._order_num = 0
         self._file_obj: Optional[IO[Any]] = None
         self._lock = _lock
@@ -139,7 +143,8 @@ class SLKFile(io.IOBase):
 
         retrieval_requests: List[str] = list()
         logger.debug("Retrieving %i items from tape", len(retrieve_files))
-        for inp_file, _ in retrieve_files:
+        for inp_file, output_dir in retrieve_files:
+            self._mkdirs(output_dir)
             retrieval_requests.append(inp_file)
         logger.debug("Creating slk query for %i files", len(retrieve_files))
         search_id = pyslk.search(pyslk.slk_gen_file_query(retrieval_requests))
@@ -188,6 +193,23 @@ class SLKFile(io.IOBase):
         if self._file_obj is None:
             self._cache_files()
         return self._file_obj.seek(target)  # type: ignore
+
+    def _mkdirs(self, path):
+        rp = os.path.realpath(path)
+        if os.access(rp, os.F_OK):
+            if not os.access(rp, os.W_OK):
+                raise PermissionError(f"Cannot write to directory, {rp}, needed for downloading data. Probably, you lack access privileges.")
+            return
+        components = Path(rp).parts[1:]
+        for i in range (len(components)):
+            subpath = Path("/", *components[:i+1])
+            if not os.access(subpath, os.F_OK):
+                try:
+                    os.mkdir(subpath)
+                except PermissionError as e:
+                    raise PermissionError(f"Cannot create or access directory, {e.filename}, needed for downloading data. Probably, you lack access privileges.")
+                os.chmod(subpath, self.dir_permissions)
+
 
     @staticmethod
     def readable() -> Literal[True]:
@@ -247,8 +269,11 @@ class SLKFileSystem(AbstractFileSystem):
         retrieve data from tape.
     block_size: int, default: None
          Some indication of buffering - this is a value in bytes
-    file_permissions: int, default: 0o3777
-        Permission when creating directories and files.
+    file_permissions: int, default: 0o644
+        Permission when creating files.
+    dir_permissions: int, default: 0o2775
+        Permission when creating directories.
+
     override: bool, default: False
         Override existing files
     touch: bool, default: False
@@ -266,6 +291,8 @@ class SLKFileSystem(AbstractFileSystem):
         self,
         block_size: Optional[int] = None,
         slk_cache: Optional[Union[str, Path]] = None,
+        file_permissions: int = 0o644,
+        dir_permissions: int = 0o2775,
         touch: bool = False,
         delay: int = 2,
         override: bool = False,
@@ -297,6 +324,7 @@ class SLKFileSystem(AbstractFileSystem):
         self.override = override
         self.delay = delay
         self.file_permissions = file_permissions
+        self.dir_permissions = dir_permissions
 
     @overload
     def ls(
@@ -368,4 +396,5 @@ class SLKFileSystem(AbstractFileSystem):
             delay=self.delay,
             encoding=kwargs.get("encoding"),
             file_permissions=self.file_permissions,
+            dir_permissions=self.dir_permissions,
         )
