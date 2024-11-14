@@ -61,7 +61,7 @@ class SLKFile(io.IOBase):
         't'       text mode
     file_permissions: int, default: 0o644
         Permission when creating files.
-    dir_permissions: int, default: 0o2775
+    dir_permissions: int, default: 0o3775
         Permission when creating directories.   **kwargs:
         Additional keyword arguments passed to the open file descriptor method.
 
@@ -95,7 +95,7 @@ class SLKFile(io.IOBase):
         mode: str = "rb",
         touch: bool = False,
         file_permissions: int = 0o644,
-        dir_permissions: int = 0o2775,
+        dir_permissions: int = 0o3775,
         delay: int = 2,
         _lock: threading.Lock = _retrieval_lock,
         _file_queue: Queue[Tuple[str, str]] = FileQueue,
@@ -271,7 +271,7 @@ class SLKFileSystem(AbstractFileSystem):
          Some indication of buffering - this is a value in bytes
     file_permissions: int, default: 0o644
         Permission when creating files.
-    dir_permissions: int, default: 0o2775
+    dir_permissions: int, default: 0o3775
         Permission when creating directories.
 
     override: bool, default: False
@@ -292,7 +292,7 @@ class SLKFileSystem(AbstractFileSystem):
         block_size: Optional[int] = None,
         slk_cache: Optional[Union[str, Path]] = None,
         file_permissions: int = 0o644,
-        dir_permissions: int = 0o2775,
+        dir_permissions: int = 0o3775,
         touch: bool = False,
         delay: int = 2,
         override: bool = False,
