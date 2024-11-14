@@ -121,7 +121,7 @@ class SLKFile(io.IOBase):
         self.write_through = False
         self.delay = delay
         self._file_queue = _file_queue
-#        print(self._file)
+        #        print(self._file)
         with _lock:
             if not Path(self._file).exists() or override:
                 self._file_queue.put((self._url, str(Path(self._file).parent)))
@@ -193,22 +193,25 @@ class SLKFile(io.IOBase):
             self._cache_files()
         return self._file_obj.seek(target)  # type: ignore
 
-    def _mkdirs(self, path : Union[str, Path]) -> None:
+    def _mkdirs(self, path: Union[str, Path]) -> None:
         rp = os.path.realpath(path)
         if os.access(rp, os.F_OK):
             if not os.access(rp, os.W_OK):
-                raise PermissionError(f"Cannot write to directory, {rp}, needed for downloading data. Probably, you lack access privileges.")
+                raise PermissionError(
+                    f"Cannot write to directory, {rp}, needed for downloading data. Probably, you lack access privileges."
+                )
             return
         components = Path(rp).parts[1:]
-        for i in range (len(components)):
-            subpath = Path("/", *components[:i+1])
+        for i in range(len(components)):
+            subpath = Path("/", *components[: i + 1])
             if not os.access(subpath, os.F_OK):
                 try:
                     os.mkdir(subpath)
                 except PermissionError as e:
-                    raise PermissionError(f"Cannot create or access directory, {e.filename}, needed for downloading data. Probably, you lack access privileges.")
+                    raise PermissionError(
+                        f"Cannot create or access directory, {e.filename}, needed for downloading data."
+                    )
                 os.chmod(subpath, self.dir_permissions)
-
 
     @staticmethod
     def readable() -> Literal[True]:
