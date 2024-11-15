@@ -20,5 +20,4 @@ test_coverage:
 
 lint:
 	mypy --install-types --non-interactive
-	black --check -t py310 .
-	flake8 slkspec --count --max-complexity=10 --max-line-length=88 --statistics --doctests
+	ruff check .
