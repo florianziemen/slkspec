@@ -1,4 +1,5 @@
 """pytest definitions to run the unittests."""
+
 from __future__ import annotations
 
 import builtins
@@ -6,7 +7,7 @@ import shutil
 from pathlib import Path
 from subprocess import PIPE, run
 from tempfile import TemporaryDirectory
-from typing import Generator
+from typing import Dict, Generator, Union
 
 import mock
 import numpy as np
@@ -38,11 +39,22 @@ class SLKMock:
         self._cache[hash_value] = inp_f
         return hash_value
 
-    def gen_file_query(self, resources: builtins.list[str], **kwargs) -> builtins.list[str]:
+    def gen_file_query(
+        self, resources: builtins.list[str], **kwargs: Dict
+    ) -> builtins.list[str]:
         """Mock slk_gen_file_qeury."""
         return [f for f in resources if Path(f).exists()]
 
-    def retrieve(self, resource: int, dest_dir: str, recursive:bool = False, group: Union[bool, None] = None, delayed: bool= False, preserve_path: bool = True, **kwargs) -> None:
+    def retrieve(
+        self,
+        resource: int,
+        dest_dir: str,
+        recursive: bool = False,
+        group: Union[bool, None] = None,
+        delayed: bool = False,
+        preserve_path: bool = True,
+        **kwargs: Dict,
+    ) -> None:
         """Mock slk_retrieve."""
         for inp_file in map(Path, self._cache[resource]):
             if preserve_path:
