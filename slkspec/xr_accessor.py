@@ -69,7 +69,7 @@ class slk:
         return list(compress(k, layer_mask))
 
     def _get_output_keys(self, graph: dask.highlevelgraph.HighLevelGraph) -> set:
-        layer_keys = self._get_output_tasks(graph.layers)
+        layer_keys = self._get_output_tasks(graph)
         layers = [graph.layers[k] for k in layer_keys]
         output_keys = [lay.get_output_keys() for lay in layers]
 
@@ -119,9 +119,9 @@ class slk:
         graph = data.dask.cull(keys=dask_keys)
 
         output_keys = self._get_output_keys(graph)
-        input_graph = self._get_input_graph(graph, output_keys)
-        input_graph = input_graph.to_dict()
-        input_graph = self._connect_tasks(input_graph, output_keys)
+        input_graph_dict = self._get_input_graph(graph, output_keys).to_dict()
+        input_graph = self._connect_tasks(input_graph_dict, output_keys)
+        del input_graph_dict
         scheduler = (
             dask.base.get_scheduler()
         )  # determine whether LocalCluster/SLUMCluster etc. exist
