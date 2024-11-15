@@ -198,7 +198,7 @@ class SLKFile(io.IOBase):
         if os.access(rp, os.F_OK):
             if not os.access(rp, os.W_OK):
                 raise PermissionError(
-                    f"Cannot write to directory, {rp}, needed for downloading data. Probably, you lack access privileges."
+                    f"Cannot write to directory {rp} needed for downloading data."
                 )
             return
         components = Path(rp).parts[1:]
@@ -209,7 +209,8 @@ class SLKFile(io.IOBase):
                     os.mkdir(subpath)
                 except PermissionError as e:
                     raise PermissionError(
-                        f"Cannot create or access directory, {e.filename}, needed for downloading data."
+                        f"Cannot create or access directory {e.filename} "
+                        + "needed for downloading data."
                     )
                 os.chmod(subpath, self.dir_permissions)
 
@@ -331,14 +332,12 @@ class SLKFileSystem(AbstractFileSystem):
     @overload
     def ls(
         self, path: Union[str, Path], detail: Literal[True], **kwargs: Any
-    ) -> List[FileInfo]:
-        ...
+    ) -> List[FileInfo]: ...
 
     @overload
     def ls(
         self, path: Union[str, Path], detail: Literal[False], **kwargs: Any
-    ) -> List[str]:
-        ...
+    ) -> List[str]: ...
 
     def ls(
         self, path: Union[str, Path], detail: bool = True, **kwargs: Any
